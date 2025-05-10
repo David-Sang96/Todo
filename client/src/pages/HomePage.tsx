@@ -2,9 +2,9 @@ import TodoList from "../components/TodoList";
 
 const HomePage = () => {
   return (
-    <div>
+    <section>
       <TodoList />
-    </div>
+    </section>
   );
 };
 

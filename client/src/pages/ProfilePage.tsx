@@ -1,37 +1,41 @@
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
-import { useNavigate } from "react-router";
+
+import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "react-toastify";
-import z from "zod";
-import { useRegisterMutation } from "../slices/userApi";
-import { useAppSelector } from "../store/hooks";
-import { registerSchema } from "../types/zod-schemas/authSchema";
+import { z } from "zod";
+import { clearUserInfo, setUserInfo } from "../slices/auth";
+import { useUpdateProfileMutation } from "../slices/userApi";
+import { useAppDispatch, useAppSelector } from "../store/hooks";
+import { profileSchema } from "../types/zod-schemas/authSchema";
 
-type FormInput = z.infer<typeof registerSchema>;
+type Input = z.infer<typeof profileSchema>;
 
-const RegisterPage = () => {
+const ProfilePage = () => {
+  const userInfo = useAppSelector((store) => store.auth.userInfo);
+  const dispatch = useAppDispatch();
+  const [update, { isLoading }] = useUpdateProfileMutation();
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<FormInput>({
-    resolver: zodResolver(registerSchema),
-    defaultValues: { name: "", email: "", password: "", confirmPassword: "" },
+  } = useForm<Input>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: {
+      name: userInfo?.name,
+      email: userInfo?.email,
+      password: "",
+      confirmPassword: "",
+    },
   });
-  const [submit, { isLoading }] = useRegisterMutation();
-  const navigate = useNavigate();
-  const { userInfo } = useAppSelector((store) => store.auth);
 
-  useEffect(() => {
-    if (userInfo) navigate("/", { replace: true });
-  }, [userInfo, navigate]);
-
-  const onSubmit: SubmitHandler<FormInput> = async (value) => {
+  const onSubmit: SubmitHandler<Input> = async (values) => {
     try {
-      const payload = await submit(value).unwrap();
-      navigate("/login");
-      toast.success(payload.message);
+      const payload = await update(values).unwrap();
+      dispatch(setUserInfo(payload.user));
+      toast.success(payload.message || "Profile updated");
+      if (payload.message.includes("Account")) {
+        dispatch(clearUserInfo());
+      }
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
@@ -40,22 +44,19 @@ const RegisterPage = () => {
   };
 
   return (
-    <div>
-      <h2 className="text-xl font-medium mb-4">Register new account</h2>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
+    <section>
+      <h2 className="text-2xl font-medium mb-3">Profile</h2>
+      <form onSubmit={handleSubmit(onSubmit)}>
         <div className="flex flex-col gap-1">
           <label htmlFor="name" className="font-medium">
             Name
           </label>
           <input
-            type="text"
             id="name"
-            placeholder="Name..."
-            className="border focus:outline-none py-1 ps-1 rounded-sm text-sm bg-gray-50"
             {...register("name")}
+            className="border focus:outline-none py-1 ps-1 rounded-sm text-sm bg-gray-50"
             disabled={isSubmitting}
           />
-
           <p className="text-sm text-red-500 font-medium">
             {errors.name?.message}
           </p>
@@ -68,7 +69,6 @@ const RegisterPage = () => {
             type="email"
             id="email"
             {...register("email")}
-            placeholder="Email..."
             className="border focus:outline-none py-1 ps-1 rounded-sm text-sm bg-gray-50"
             disabled={isSubmitting}
           />
@@ -113,11 +113,11 @@ const RegisterPage = () => {
           className="w-full bg-green-500 text-white font-medium hover:bg-green-600 py-1 cursor-pointer rounded-sm mt-3"
           disabled={isSubmitting || isLoading}
         >
-          {isLoading ? " Registering..." : " Register"}
+          {isLoading ? "Updating..." : " Update Profile"}
         </button>
       </form>
-    </div>
+    </section>
   );
 };
 
-export default RegisterPage;
+export default ProfilePage;
