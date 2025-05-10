@@ -5,9 +5,10 @@ import asyncHandler from "../utils/asyncHandler";
 export const createTodo = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     const { title } = req.body;
-    const todo = await TODO.create({ title });
+    const userId = req.user._id;
 
-    res.status(201).json({ message: "Created sucessfully", todo });
+    const todo = await TODO.create({ title, userId });
+    res.status(201).json({ message: "Created successfully", todo });
   }
 );
 
@@ -18,7 +19,7 @@ export const getAllTodo = async (
 ) => {
   try {
     const todos = await TODO.find().select("-__v");
-    res.json({ todos });
+    res.json(todos);
   } catch (error) {
     if (error instanceof Error) {
       res.status(500).json({ message: error.message });
@@ -39,7 +40,7 @@ export const getSingleTodo = async (
       res.json({ messsage: "todo not found" });
       return;
     }
-    res.json({ todo });
+    res.json(todo);
   } catch (error) {
     if (error instanceof Error) {
       res.status(500).json({ message: error.message });
@@ -52,12 +53,13 @@ export const updateTodo = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     const { title } = req.body;
     const { id } = req.params;
+
     const todo = await TODO.findByIdAndUpdate(
       id,
       { title },
       { new: true }
     ).select("-__v");
-    res.json({ todo });
+    res.json({ todo, message: "Updated successfully" });
   }
 );
 
@@ -65,6 +67,6 @@ export const deleteTodo = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params;
     await TODO.findByIdAndDelete(id);
-    res.status(500).json({ message: "Deleted sucessfully" });
+    res.json({ message: "Deleted successfully" });
   }
 );

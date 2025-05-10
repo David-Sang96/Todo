@@ -2,6 +2,7 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import { config } from "dotenv";
 import express, { json, urlencoded } from "express";
+import morgan from "morgan";
 import connectDB from "./db";
 import errorHandler from "./middlewares/errorHandler";
 import todoRoutes from "./routes";
@@ -14,8 +15,9 @@ const app = express();
 
 app
   .use(json())
+  .use(morgan("dev"))
   .use(urlencoded({ extended: true }))
-  .use(cors({ origin: process.env.CLIENT_URL }))
+  .use(cors({ origin: process.env.CLIENT_URL, credentials: true }))
   .use(cookieParser());
 
 app.use("/api/v1/todos", todoRoutes);

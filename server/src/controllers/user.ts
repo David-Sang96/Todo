@@ -77,15 +77,32 @@ export const updateUserProfile = asyncHandler(
 
     user.name = req.body.name || user.name;
     user.email = req.body.email || user.email;
-    user.password = req.body.password || user.password;
-    const updatedUser = await user.save();
+    await user.save();
+
+    if (req.body.password) {
+      user.password = req.body.password;
+      const updatedUser = await user.save();
+      res.cookie("token", "", {
+        httpOnly: true,
+        path: "/",
+        expires: new Date(0),
+      });
+      res.json({
+        message: "Account info updated.Plase login again",
+        user: {
+          _id: updatedUser._id,
+          name: updatedUser.name,
+          email: updatedUser.email,
+        },
+      });
+    }
 
     res.json({
       message: "User profile update",
       user: {
-        _id: updatedUser._id,
-        name: updatedUser.name,
-        email: updatedUser.email,
+        _id: user._id,
+        name: user.name,
+        email: user.email,
       },
     });
   }
